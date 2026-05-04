@@ -38,6 +38,10 @@ jobs:
 
           shopt -s dotglob nullglob
 
+          # Remove workflow files from ZIP before moving.
+          # GitHub Actions cannot push workflow changes using default GITHUB_TOKEN.
+          rm -rf extracted/TermuxKeyboardApp/.github
+
           rsync -a extracted/TermuxKeyboardApp/ ./
 
           rm -rf extracted
