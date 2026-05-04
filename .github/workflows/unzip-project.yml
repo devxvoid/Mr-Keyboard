@@ -11,6 +11,9 @@ jobs:
     name: Extract Project to Root
     runs-on: ubuntu-latest
 
+    env:
+      ZIP_NAME: MrRobotKeyboard-v5-production-full.zip
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -21,8 +24,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          ZIP_NAME="MrRobotKeyboard-v5-production-full.zip"
 
           test -f "$ZIP_NAME"
 
@@ -36,20 +37,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Find extracted root folder automatically
           ROOT_DIR=$(find extracted -mindepth 1 -maxdepth 1 -type d | head -n 1)
 
           echo "Detected root: $ROOT_DIR"
 
           shopt -s dotglob nullglob
 
-          # Remove workflows if exist (permission issue fix)
           rm -rf "$ROOT_DIR/.github"
 
-          # Copy files safely
           rsync -a "$ROOT_DIR"/ ./
 
-          # Cleanup
           rm -rf extracted
           rm -f "$ZIP_NAME"
 
