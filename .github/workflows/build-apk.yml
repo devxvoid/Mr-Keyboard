@@ -8,32 +8,29 @@ permissions:
 
 jobs:
   build:
-    name: Generate Root Project and Build APK
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
 
       - name: Generate Android project in repo root
         shell: bash
         run: |
-          set -euo pipefail
+          set -e
 
+          rm -rf app
           mkdir -p app/src/main/java/com/example/termuxkeyboard
-          mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/xml
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
@@ -55,33 +52,31 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TermuxKeyboardApp"
-include(":app")
+rootProject.name = 'TermuxKeyboardApp'
+include ':app'
 EOF
 
           cat > build.gradle <<'EOF'
 plugins {
-    id "com.android.application" version "8.5.2" apply false
-    id "org.jetbrains.kotlin.android" version "1.9.24" apply false
+    id 'com.android.application' version '8.5.2' apply false
 }
 EOF
 
           cat > app/build.gradle <<'EOF'
 plugins {
-    id "com.android.application"
-    id "org.jetbrains.kotlin.android"
+    id 'com.android.application'
 }
 
 android {
-    namespace "com.example.termuxkeyboard"
+    namespace 'com.example.termuxkeyboard'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.example.termuxkeyboard"
+        applicationId 'com.example.termuxkeyboard'
         minSdk 23
         targetSdk 35
         versionCode 1
-        versionName "1.0"
+        versionName '1.0'
     }
 }
 EOF
@@ -89,38 +84,30 @@ EOF
           cat > app/src/main/AndroidManifest.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <uses-permission android:name="android.permission.VIBRATE" />
-
     <application
         android:allowBackup="true"
         android:label="Termux Keyboard"
         android:theme="@style/AppTheme"
         android:supportsRtl="true">
-
         <service
             android:name=".TermuxKeyboardService"
             android:label="Termux Keyboard"
             android:permission="android.permission.BIND_INPUT_METHOD"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.view.InputMethod" />
             </intent-filter>
-
             <meta-data
                 android:name="android.view.im"
                 android:resource="@xml/method" />
         </service>
-
     </application>
 </manifest>
 EOF
 
           cat > app/src/main/res/xml/method.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
-<input-method xmlns:android="http://schemas.android.com/apk/res/android"
-    android:isDefault="false" />
+<input-method xmlns:android="http://schemas.android.com/apk/res/android" />
 EOF
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
@@ -131,332 +118,278 @@ EOF
         <item name="android:windowActionBar">false</item>
         <item name="android:fontFamily">monospace</item>
         <item name="android:colorAccent">#00FF66</item>
-        <item name="android:navigationBarColor">#050505</item>
-        <item name="android:windowLightNavigationBar">false</item>
     </style>
-
-    <style name="HackerKey" parent="@android:style/Widget.Material.Button">
-        <item name="android:background">@drawable/key_hacker</item>
-        <item name="android:textColor">#00FF66</item>
-        <item name="android:textSize">12sp</item>
-        <item name="android:textAllCaps">false</item>
-        <item name="android:fontFamily">monospace</item>
-        <item name="android:minHeight">0dp</item>
-        <item name="android:minWidth">0dp</item>
-        <item name="android:includeFontPadding">false</item>
-        <item name="android:paddingLeft">2dp</item>
-        <item name="android:paddingRight">2dp</item>
-    </style>
-</resources>
-EOF
-
-          cat > app/src/main/res/values/colors.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="hacker_bg">#050505</color>
-    <color name="hacker_key">#101010</color>
-    <color name="hacker_key_pressed">#003B1F</color>
-    <color name="hacker_green">#00FF66</color>
-    <color name="hacker_border">#143D24</color>
 </resources>
 EOF
 
           cat > app/src/main/res/drawable/key_hacker.xml <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <item android:state_selected="true">
-        <shape android:shape="rectangle">
-            <solid android:color="#003B1F" />
-            <stroke android:width="1dp" android:color="#00FF66" />
-            <corners android:radius="10dp" />
-            <padding android:left="4dp" android:right="4dp" android:top="4dp" android:bottom="4dp" />
-        </shape>
-    </item>
-
     <item android:state_pressed="true">
         <shape android:shape="rectangle">
             <solid android:color="#003B1F" />
             <stroke android:width="1dp" android:color="#00FF66" />
             <corners android:radius="10dp" />
-            <padding android:left="4dp" android:right="4dp" android:top="4dp" android:bottom="4dp" />
         </shape>
     </item>
-
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#003B1F" />
+            <stroke android:width="1dp" android:color="#00FF66" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
     <item>
         <shape android:shape="rectangle">
             <solid android:color="#101010" />
             <stroke android:width="1dp" android:color="#143D24" />
             <corners android:radius="10dp" />
-            <padding android:left="4dp" android:right="4dp" android:top="4dp" android:bottom="4dp" />
         </shape>
     </item>
-
 </selector>
 EOF
 
-          cat > app/src/main/res/drawable/keyboard_panel.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="#050505" />
-    <stroke android:width="1dp" android:color="#143D24" />
-</shape>
-EOF
+          cat > app/src/main/java/com/example/termuxkeyboard/TermuxKeyboardService.java <<'EOF'
+package com.example.termuxkeyboard;
 
-          cat > app/src/main/res/layout/keyboard_view.xml <<'EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/keyboardRoot"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="6dp"
-    android:background="@drawable/keyboard_panel">
+import android.inputmethodservice.InputMethodService;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.inputmethod.InputConnection;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="26dp"
-        android:text="MR.ROBOT // TERMUX CONTROL BOARD"
-        android:textColor="#00FF66"
-        android:textSize="11sp"
-        android:gravity="center_vertical"
-        android:fontFamily="monospace"
-        android:letterSpacing="0.08"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp" />
+public class TermuxKeyboardService extends InputMethodService {
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
+    private boolean ctrlPressed = false;
+    private boolean altPressed = false;
+    private Button ctrlButton;
+    private Button altButton;
 
-        <Button style="@style/HackerKey" android:id="@+id/keyEsc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="ESC" />
-        <Button style="@style/HackerKey" android:id="@+id/keyTab" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="TAB" />
-        <Button style="@style/HackerKey" android:id="@+id/keyCtrl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL" />
-        <Button style="@style/HackerKey" android:id="@+id/keyAlt" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="ALT" />
-        <Button style="@style/HackerKey" android:id="@+id/keySlash" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="/" />
-        <Button style="@style/HackerKey" android:id="@+id/keyPipe" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="|" />
-        <Button style="@style/HackerKey" android:id="@+id/keyTilde" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="~" />
-        <Button style="@style/HackerKey" android:id="@+id/keyDollar" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="$" />
-    </LinearLayout>
+    @Override
+    public View onCreateInputView() {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(6, 6, 6, 6);
+        root.setBackgroundColor(0xFF050505);
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
+        TextView title = new TextView(this);
+        title.setText("MR.ROBOT // TERMUX CONTROL BOARD");
+        title.setTextColor(0xFF00FF66);
+        title.setTextSize(11);
+        title.setGravity(Gravity.CENTER_VERTICAL);
+        title.setPadding(8, 0, 8, 0);
+        root.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 36
+        ));
 
-        <Button style="@style/HackerKey" android:id="@+id/keyLeft" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="LEFT" />
-        <Button style="@style/HackerKey" android:id="@+id/keyDown" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="DOWN" />
-        <Button style="@style/HackerKey" android:id="@+id/keyUp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="UP" />
-        <Button style="@style/HackerKey" android:id="@+id/keyRight" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="RIGHT" />
-        <Button style="@style/HackerKey" android:id="@+id/keyEnter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="ENTER" />
-    </LinearLayout>
+        LinearLayout row1 = row();
+        Button esc = key("ESC");
+        Button tab = key("TAB");
+        ctrlButton = key("CTRL");
+        altButton = key("ALT");
+        Button slash = key("/");
+        Button pipe = key("|");
+        Button tilde = key("~");
+        Button dollar = key("$");
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
+        add(row1, esc, 1);
+        add(row1, tab, 1);
+        add(row1, ctrlButton, 1);
+        add(row1, altButton, 1);
+        add(row1, slash, 1);
+        add(row1, pipe, 1);
+        add(row1, tilde, 1);
+        add(row1, dollar, 1);
+        root.addView(row1);
 
-        <Button style="@style/HackerKey" android:id="@+id/keyCtrlC" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL+C" />
-        <Button style="@style/HackerKey" android:id="@+id/keyCtrlD" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL+D" />
-        <Button style="@style/HackerKey" android:id="@+id/keyCtrlL" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL+L" />
-    </LinearLayout>
+        LinearLayout row2 = row();
+        Button left = key("LEFT");
+        Button down = key("DOWN");
+        Button up = key("UP");
+        Button right = key("RIGHT");
+        Button enter = key("ENTER");
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
+        add(row2, left, 1);
+        add(row2, down, 1);
+        add(row2, up, 1);
+        add(row2, right, 1);
+        add(row2, enter, 2);
+        root.addView(row2);
 
-        <Button style="@style/HackerKey" android:id="@+id/keyLs" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="ls" />
-        <Button style="@style/HackerKey" android:id="@+id/keyCd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="cd" />
-        <Button style="@style/HackerKey" android:id="@+id/keyClear" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="clear" />
-        <Button style="@style/HackerKey" android:id="@+id/keyPkg" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="pkg update" />
-    </LinearLayout>
+        LinearLayout row3 = row();
+        Button ctrlC = key("CTRL+C");
+        Button ctrlD = key("CTRL+D");
+        Button ctrlL = key("CTRL+L");
 
-</LinearLayout>
-EOF
+        add(row3, ctrlC, 1);
+        add(row3, ctrlD, 1);
+        add(row3, ctrlL, 1);
+        root.addView(row3);
 
-          cat > app/src/main/java/com/example/termuxkeyboard/TermuxKeyboardService.kt <<'EOF'
-package com.example.termuxkeyboard
+        LinearLayout row4 = row();
+        Button ls = key("ls");
+        Button cd = key("cd");
+        Button clear = key("clear");
+        Button pkg = key("pkg update");
 
-import android.inputmethodservice.InputMethodService
-import android.view.KeyEvent
-import android.view.View
-import android.view.inputmethod.InputConnection
-import android.widget.Button
+        add(row4, ls, 1);
+        add(row4, cd, 1);
+        add(row4, clear, 1);
+        add(row4, pkg, 2);
+        root.addView(row4);
 
-class TermuxKeyboardService : InputMethodService() {
+        esc.setOnClickListener(v -> sendKey(KeyEvent.KEYCODE_ESCAPE));
+        tab.setOnClickListener(v -> sendKey(KeyEvent.KEYCODE_TAB));
 
-    private var ctrlPressed = false
-    private var altPressed = false
-    private var ctrlButton: Button? = null
-    private var altButton: Button? = null
+        ctrlButton.setOnClickListener(v -> {
+            ctrlPressed = !ctrlPressed;
+            ctrlButton.setSelected(ctrlPressed);
+        });
 
-    override fun onCreateInputView(): View {
-        val view = layoutInflater.inflate(R.layout.keyboard_view, null)
+        altButton.setOnClickListener(v -> {
+            altPressed = !altPressed;
+            altButton.setSelected(altPressed);
+        });
 
-        ctrlButton = view.findViewById(R.id.keyCtrl)
-        altButton = view.findViewById(R.id.keyAlt)
+        slash.setOnClickListener(v -> commitText("/"));
+        pipe.setOnClickListener(v -> commitText("|"));
+        tilde.setOnClickListener(v -> commitText("~"));
+        dollar.setOnClickListener(v -> commitText("$"));
 
-        view.findViewById<Button>(R.id.keyEsc).setOnClickListener {
-            sendKey(KeyEvent.KEYCODE_ESCAPE)
-        }
+        left.setOnClickListener(v -> sendKey(KeyEvent.KEYCODE_DPAD_LEFT));
+        right.setOnClickListener(v -> sendKey(KeyEvent.KEYCODE_DPAD_RIGHT));
+        up.setOnClickListener(v -> sendKey(KeyEvent.KEYCODE_DPAD_UP));
+        down.setOnClickListener(v -> sendKey(KeyEvent.KEYCODE_DPAD_DOWN));
+        enter.setOnClickListener(v -> sendKey(KeyEvent.KEYCODE_ENTER));
 
-        view.findViewById<Button>(R.id.keyTab).setOnClickListener {
-            sendKey(KeyEvent.KEYCODE_TAB)
-        }
+        ctrlC.setOnClickListener(v -> sendCtrlKey(KeyEvent.KEYCODE_C));
+        ctrlD.setOnClickListener(v -> sendCtrlKey(KeyEvent.KEYCODE_D));
+        ctrlL.setOnClickListener(v -> sendCtrlKey(KeyEvent.KEYCODE_L));
 
-        ctrlButton?.setOnClickListener {
-            ctrlPressed = !ctrlPressed
-            it.isSelected = ctrlPressed
-        }
+        ls.setOnClickListener(v -> commitText("ls "));
+        cd.setOnClickListener(v -> commitText("cd "));
+        clear.setOnClickListener(v -> {
+            commitText("clear");
+            sendKey(KeyEvent.KEYCODE_ENTER);
+        });
+        pkg.setOnClickListener(v -> commitText("pkg update && pkg upgrade"));
 
-        altButton?.setOnClickListener {
-            altPressed = !altPressed
-            it.isSelected = altPressed
-        }
-
-        view.findViewById<Button>(R.id.keySlash).setOnClickListener {
-            commitText("/")
-        }
-
-        view.findViewById<Button>(R.id.keyPipe).setOnClickListener {
-            commitText("|")
-        }
-
-        view.findViewById<Button>(R.id.keyTilde).setOnClickListener {
-            commitText("~")
-        }
-
-        view.findViewById<Button>(R.id.keyDollar).setOnClickListener {
-            commitText("$")
-        }
-
-        view.findViewById<Button>(R.id.keyLeft).setOnClickListener {
-            sendKey(KeyEvent.KEYCODE_DPAD_LEFT)
-        }
-
-        view.findViewById<Button>(R.id.keyRight).setOnClickListener {
-            sendKey(KeyEvent.KEYCODE_DPAD_RIGHT)
-        }
-
-        view.findViewById<Button>(R.id.keyUp).setOnClickListener {
-            sendKey(KeyEvent.KEYCODE_DPAD_UP)
-        }
-
-        view.findViewById<Button>(R.id.keyDown).setOnClickListener {
-            sendKey(KeyEvent.KEYCODE_DPAD_DOWN)
-        }
-
-        view.findViewById<Button>(R.id.keyEnter).setOnClickListener {
-            sendKey(KeyEvent.KEYCODE_ENTER)
-        }
-
-        view.findViewById<Button>(R.id.keyCtrlC).setOnClickListener {
-            sendCtrlKey(KeyEvent.KEYCODE_C)
-        }
-
-        view.findViewById<Button>(R.id.keyCtrlD).setOnClickListener {
-            sendCtrlKey(KeyEvent.KEYCODE_D)
-        }
-
-        view.findViewById<Button>(R.id.keyCtrlL).setOnClickListener {
-            sendCtrlKey(KeyEvent.KEYCODE_L)
-        }
-
-        view.findViewById<Button>(R.id.keyLs).setOnClickListener {
-            commitText("ls ")
-        }
-
-        view.findViewById<Button>(R.id.keyCd).setOnClickListener {
-            commitText("cd ")
-        }
-
-        view.findViewById<Button>(R.id.keyClear).setOnClickListener {
-            commitText("clear")
-            sendKey(KeyEvent.KEYCODE_ENTER)
-        }
-
-        view.findViewById<Button>(R.id.keyPkg).setOnClickListener {
-            commitText("pkg update && pkg upgrade")
-        }
-
-        return view
+        return root;
     }
 
-    private fun commitText(text: String) {
-        currentInputConnection?.commitText(text, 1)
+    private LinearLayout row() {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setPadding(0, 2, 0, 2);
+        layout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 54
+        ));
+        return layout;
     }
 
-    private fun sendKey(keyCode: Int) {
-        val inputConnection: InputConnection = currentInputConnection ?: return
-        var metaState = 0
+    private Button key(String text) {
+        Button button = new Button(this);
+        button.setText(text);
+        button.setTextColor(0xFF00FF66);
+        button.setTextSize(11);
+        button.setAllCaps(false);
+        button.setBackgroundResource(getResources().getIdentifier(
+                "key_hacker",
+                "drawable",
+                getPackageName()
+        ));
+        button.setPadding(2, 0, 2, 0);
+        return button;
+    }
+
+    private void add(LinearLayout row, Button button, int weight) {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                weight
+        );
+        params.setMargins(2, 2, 2, 2);
+        row.addView(button, params);
+    }
+
+    private void commitText(String text) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic != null) {
+            ic.commitText(text, 1);
+        }
+    }
+
+    private void sendKey(int keyCode) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return;
+
+        int metaState = 0;
 
         if (ctrlPressed) {
-            metaState = metaState or KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+            metaState |= KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
         }
 
         if (altPressed) {
-            metaState = metaState or KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON
+            metaState |= KeyEvent.META_ALT_ON | KeyEvent.META_ALT_LEFT_ON;
         }
 
-        inputConnection.sendKeyEvent(
-            KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState)
-        )
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState));
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState));
 
-        inputConnection.sendKeyEvent(
-            KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState)
-        )
-
-        resetModifiers()
+        resetModifiers();
     }
 
-    private fun sendCtrlKey(keyCode: Int) {
-        val inputConnection = currentInputConnection ?: return
-        val metaState = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+    private void sendCtrlKey(int keyCode) {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return;
 
-        inputConnection.sendKeyEvent(
-            KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState)
-        )
+        int metaState = KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
 
-        inputConnection.sendKeyEvent(
-            KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState)
-        )
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState));
+        ic.sendKeyEvent(new KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState));
 
-        resetModifiers()
+        resetModifiers();
     }
 
-    private fun resetModifiers() {
-        ctrlPressed = false
-        altPressed = false
-        ctrlButton?.isSelected = false
-        altButton?.isSelected = false
+    private void resetModifiers() {
+        ctrlPressed = false;
+        altPressed = false;
+
+        if (ctrlButton != null) ctrlButton.setSelected(false);
+        if (altButton != null) altButton.setSelected(false);
     }
 }
 EOF
+
+      - name: Create Gradle wrapper
+        shell: bash
+        run: |
+          set -e
+          gradle wrapper --gradle-version 8.7
 
       - name: Build debug APK with logs
         shell: bash
         run: |
           set -o pipefail
-          gradle clean assembleDebug --stacktrace --info 2>&1 | tee build-log.txt
+          ./gradlew clean assembleDebug --stacktrace --info 2>&1 | tee build-log.txt
 
       - name: Commit generated files to repo root
         if: always()
         shell: bash
         run: |
-          set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add settings.gradle build.gradle app build-log.txt || true
+          git add settings.gradle build.gradle app gradlew gradlew.bat gradle build-log.txt || true
 
           if git diff --cached --quiet; then
             echo "No generated file changes to commit."
           else
-            git commit -m "Generate Mr Robot themed Termux Keyboard Android project"
-            git push || echo "Push skipped or failed. Artifacts are still uploaded."
+            git commit -m "Generate executable Termux Keyboard Android project"
+            git push || true
           fi
 
       - name: Upload APK artifact
@@ -482,4 +415,7 @@ EOF
             settings.gradle
             build.gradle
             app
+            gradle
+            gradlew
+            gradlew.bat
             build-log.txt
