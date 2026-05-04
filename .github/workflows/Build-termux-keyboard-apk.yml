@@ -34,12 +34,25 @@ jobs:
         with:
           gradle-version: "8.7"
 
-      - name: Clean old legacy keyboard XML
+      - name: Clean legacy files and fix v5 Kotlin
         shell: bash
         run: |
           set -euo pipefail
 
+          rm -rf app/src/main/java/com/example
           rm -f app/src/main/res/layout/keyboard_view.xml
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          file = Path("app/src/main/java/com/robot/mrkeyboard/TermuxKeyboardService.kt")
+          text = file.read_text()
+
+          text = text.replace("it == '\\\\n'", "it == '\\n'")
+          text = text.replace("it == '\\\\\\\\n'", "it == '\\n'")
+
+          file.write_text(text)
+          PY
 
       - name: Verify v5 project files
         shell: bash
