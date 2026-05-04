@@ -1,4 +1,4 @@
-name: Unzip Project to Root
+name: Unzip TermuxKeyboardApp Contents to Root
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   unzip:
-    name: Extract ZIP to Root
+    name: Extract Inner Project Files to Root
     runs-on: ubuntu-latest
 
     steps:
@@ -17,45 +17,45 @@ jobs:
         with:
           fetch-depth: 0
 
-      # OPTION 1 (recommended): ZIP already in repo root
-      - name: Verify ZIP exists
-        run: |
-          ls -la
-          test -f TermuxKeyboardApp.zip
-
-      # OPTION 2 (if ZIP is artifact, uncomment this)
-      # - name: Download artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: termux-keyboard-zip
-
-      - name: Extract ZIP into repo root
+      - name: Extract ZIP
+        shell: bash
         run: |
           set -euo pipefail
 
+          test -f TermuxKeyboardApp.zip
+
+          rm -rf extracted
+          mkdir -p extracted
+
           unzip -o TermuxKeyboardApp.zip -d extracted
 
-          # Move everything to root
-          shopt -s dotglob
-          mv extracted/* .
-          rm -rf extracted
-
-      - name: Delete ZIP file
+      - name: Move files from TermuxKeyboardApp folder to repo root
+        shell: bash
         run: |
+          set -euo pipefail
+
+          test -d extracted/TermuxKeyboardApp
+
+          shopt -s dotglob nullglob
+
+          mv extracted/TermuxKeyboardApp/* .
+
+          rm -rf extracted
           rm -f TermuxKeyboardApp.zip
 
-      - name: Commit extracted files
+      - name: Commit extracted root project
+        shell: bash
         run: |
           set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add .
+          git add -A
 
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No changes to commit."
           else
-            git commit -m "Extract Termux Keyboard project to root and remove zip"
+            git commit -m "Move TermuxKeyboardApp project files to repo root"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
