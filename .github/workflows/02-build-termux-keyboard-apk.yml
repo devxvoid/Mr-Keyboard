@@ -1,0 +1,362 @@
+name: Build Termux Keyboard APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "app/**"
+      - "build.gradle"
+      - "settings.gradle"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Complete Keyboard APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Patch build config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > app/build.gradle <<'EOF'
+plugins {
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+}
+
+android {
+    namespace "com.example.termuxkeyboard"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.example.termuxkeyboard"
+        minSdk 23
+        targetSdk 35
+        versionCode 2
+        versionName "2.0"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+EOF
+
+      - name: Patch complete keyboard service
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > app/src/main/java/com/example/termuxkeyboard/TermuxKeyboardService.kt <<'EOF'
+package com.example.termuxkeyboard
+
+import android.graphics.Color
+import android.graphics.Typeface
+import android.inputmethodservice.InputMethodService
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.View
+import android.view.inputmethod.InputConnection
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
+
+class TermuxKeyboardService : InputMethodService() {
+
+    private var ctrlPressed = false
+    private var altPressed = false
+    private var shifted = false
+
+    private var ctrlButton: Button? = null
+    private var altButton: Button? = null
+    private var shiftButton: Button? = null
+
+    private val green = Color.rgb(0, 255, 102)
+    private val dark = Color.rgb(5, 5, 5)
+
+    override fun onCreateInputView(): View {
+        val root = LinearLayout(this)
+        root.orientation = LinearLayout.VERTICAL
+        root.setPadding(6.dp(), 6.dp(), 6.dp(), 6.dp())
+        root.setBackgroundColor(dark)
+
+        val title = TextView(this)
+        title.text = "MR.ROBOT // COMPLETE TERMUX KEYBOARD"
+        title.setTextColor(green)
+        title.textSize = 11f
+        title.gravity = Gravity.CENTER_VERTICAL
+        title.typeface = Typeface.MONOSPACE
+        title.setPadding(8.dp(), 0, 8.dp(), 0)
+        root.addView(title, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            24.dp()
+        ))
+
+        val row0 = row()
+        addKey(row0, "ESC") { sendKey(KeyEvent.KEYCODE_ESCAPE) }
+        addKey(row0, "TAB") { sendKey(KeyEvent.KEYCODE_TAB) }
+        ctrlButton = addKey(row0, "CTRL") {
+            ctrlPressed = !ctrlPressed
+            ctrlButton?.isSelected = ctrlPressed
+        }
+        altButton = addKey(row0, "ALT") {
+            altPressed = !altPressed
+            altButton?.isSelected = altPressed
+        }
+        addKey(row0, "LEFT") { sendKey(KeyEvent.KEYCODE_DPAD_LEFT) }
+        addKey(row0, "UP") { sendKey(KeyEvent.KEYCODE_DPAD_UP) }
+        addKey(row0, "DOWN") { sendKey(KeyEvent.KEYCODE_DPAD_DOWN) }
+        addKey(row0, "RIGHT") { sendKey(KeyEvent.KEYCODE_DPAD_RIGHT) }
+        root.addView(row0)
+
+        val row1 = row()
+        listOf("1","2","3","4","5","6","7","8","9","0").forEach { value ->
+            addKey(row1, value) { commitText(value) }
+        }
+        root.addView(row1)
+
+        val row2 = row()
+        listOf("q","w","e","r","t","y","u","i","o","p").forEach { letter ->
+            addKey(row2, letter.uppercase()) { commitLetter(letter[0]) }
+        }
+        root.addView(row2)
+
+        val row3 = row()
+        listOf("a","s","d","f","g","h","j","k","l").forEach { letter ->
+            addKey(row3, letter.uppercase()) { commitLetter(letter[0]) }
+        }
+        root.addView(row3)
+
+        val row4 = row()
+        shiftButton = addKey(row4, "SHIFT", 1.4f) {
+            shifted = !shifted
+            shiftButton?.isSelected = shifted
+        }
+        listOf("z","x","c","v","b","n","m").forEach { letter ->
+            addKey(row4, letter.uppercase()) { commitLetter(letter[0]) }
+        }
+        addKey(row4, "DEL", 1.4f) { backspace() }
+        root.addView(row4)
+
+        val row5 = row()
+        addKey(row5, "/", 1f) { commitText("/") }
+        addKey(row5, "|", 1f) { commitText("|") }
+        addKey(row5, "~", 1f) { commitText("~") }
+        addKey(row5, "$", 1f) { commitText("$") }
+        addKey(row5, "-", 1f) { commitText("-") }
+        addKey(row5, "_", 1f) { commitText("_") }
+        addKey(row5, ".", 1f) { commitText(".") }
+        addKey(row5, ":", 1f) { commitText(":") }
+        addKey(row5, "ENTER", 2f) { sendKey(KeyEvent.KEYCODE_ENTER) }
+        root.addView(row5)
+
+        val row6 = row()
+        addKey(row6, "CTRL+C", 1.4f) { sendCtrlKey(KeyEvent.KEYCODE_C) }
+        addKey(row6, "CTRL+D", 1.4f) { sendCtrlKey(KeyEvent.KEYCODE_D) }
+        addKey(row6, "CTRL+L", 1.4f) { sendCtrlKey(KeyEvent.KEYCODE_L) }
+        addKey(row6, "SPACE", 4f) { commitText(" ") }
+        root.addView(row6)
+
+        val row7 = row()
+        addKey(row7, "ls", 1f) { commitText("ls ") }
+        addKey(row7, "cd", 1f) { commitText("cd ") }
+        addKey(row7, "clear", 1.2f) {
+            commitText("clear")
+            sendKey(KeyEvent.KEYCODE_ENTER)
+        }
+        addKey(row7, "pkg update", 2f) {
+            commitText("pkg update && pkg upgrade")
+        }
+        root.addView(row7)
+
+        return root
+    }
+
+    private fun row(): LinearLayout {
+        val layout = LinearLayout(this)
+        layout.orientation = LinearLayout.HORIZONTAL
+        layout.setPadding(0, 1.dp(), 0, 1.dp())
+        layout.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            43.dp()
+        )
+        return layout
+    }
+
+    private fun addKey(
+        row: LinearLayout,
+        label: String,
+        weight: Float = 1f,
+        action: () -> Unit
+    ): Button {
+        val button = Button(this)
+        button.text = label
+        button.setTextColor(green)
+        button.textSize = 10f
+        button.typeface = Typeface.MONOSPACE
+        button.isAllCaps = false
+        button.setPadding(1.dp(), 0, 1.dp(), 0)
+        button.setBackgroundResource(R.drawable.key_hacker)
+        button.setOnClickListener { action() }
+
+        val params = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            weight
+        )
+        params.setMargins(2.dp(), 1.dp(), 2.dp(), 1.dp())
+        row.addView(button, params)
+
+        return button
+    }
+
+    private fun commitLetter(char: Char) {
+        val keyCode = keyCodeForLetter(char)
+
+        if (ctrlPressed && keyCode != null) {
+            sendKey(keyCode)
+            return
+        }
+
+        val output = if (shifted) char.uppercaseChar().toString() else char.lowercaseChar().toString()
+        commitText(output)
+
+        if (shifted) {
+            shifted = false
+            shiftButton?.isSelected = false
+        }
+    }
+
+    private fun commitText(text: String) {
+        currentInputConnection?.commitText(text, 1)
+    }
+
+    private fun backspace() {
+        val ic = currentInputConnection ?: return
+        ic.deleteSurroundingText(1, 0)
+    }
+
+    private fun sendKey(keyCode: Int) {
+        val ic: InputConnection = currentInputConnection ?: return
+
+        var metaState = 0
+
+        if (ctrlPressed) {
+            metaState = metaState or KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+        }
+
+        if (altPressed) {
+            metaState = metaState or KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON
+        }
+
+        ic.sendKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState))
+        ic.sendKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState))
+
+        resetModifiers()
+    }
+
+    private fun sendCtrlKey(keyCode: Int) {
+        val ic = currentInputConnection ?: return
+        val metaState = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+
+        ic.sendKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState))
+        ic.sendKeyEvent(KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState))
+
+        resetModifiers()
+    }
+
+    private fun resetModifiers() {
+        ctrlPressed = false
+        altPressed = false
+        ctrlButton?.isSelected = false
+        altButton?.isSelected = false
+    }
+
+    private fun keyCodeForLetter(char: Char): Int? {
+        return when (char.lowercaseChar()) {
+            'a' -> KeyEvent.KEYCODE_A
+            'b' -> KeyEvent.KEYCODE_B
+            'c' -> KeyEvent.KEYCODE_C
+            'd' -> KeyEvent.KEYCODE_D
+            'e' -> KeyEvent.KEYCODE_E
+            'f' -> KeyEvent.KEYCODE_F
+            'g' -> KeyEvent.KEYCODE_G
+            'h' -> KeyEvent.KEYCODE_H
+            'i' -> KeyEvent.KEYCODE_I
+            'j' -> KeyEvent.KEYCODE_J
+            'k' -> KeyEvent.KEYCODE_K
+            'l' -> KeyEvent.KEYCODE_L
+            'm' -> KeyEvent.KEYCODE_M
+            'n' -> KeyEvent.KEYCODE_N
+            'o' -> KeyEvent.KEYCODE_O
+            'p' -> KeyEvent.KEYCODE_P
+            'q' -> KeyEvent.KEYCODE_Q
+            'r' -> KeyEvent.KEYCODE_R
+            's' -> KeyEvent.KEYCODE_S
+            't' -> KeyEvent.KEYCODE_T
+            'u' -> KeyEvent.KEYCODE_U
+            'v' -> KeyEvent.KEYCODE_V
+            'w' -> KeyEvent.KEYCODE_W
+            'x' -> KeyEvent.KEYCODE_X
+            'y' -> KeyEvent.KEYCODE_Y
+            'z' -> KeyEvent.KEYCODE_Z
+            else -> null
+        }
+    }
+
+    private fun Int.dp(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
+}
+EOF
+
+      - name: Build APK with logs
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle clean assembleDebug --stacktrace --info 2>&1 | tee build-log.txt
+
+      - name: Verify APK exists
+        shell: bash
+        run: |
+          ls -la app/build/outputs/apk/debug
+          test -f app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: termux-keyboard-complete-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: termux-keyboard-build-logs
+          path: build-log.txt
