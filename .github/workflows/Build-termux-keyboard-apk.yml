@@ -1,4 +1,4 @@
-name: Build Termux Keyboard APK
+name: Build MrRobot Keyboard v5 APK
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build APK
+    name: Build MrRobot Keyboard v5 APK
     runs-on: ubuntu-latest
 
     steps:
@@ -34,44 +34,31 @@ jobs:
         with:
           gradle-version: "8.7"
 
-      - name: Fix JVM target mismatch
+      - name: Clean old legacy keyboard XML
         shell: bash
         run: |
           set -euo pipefail
 
-          python3 - <<'PY'
-          from pathlib import Path
+          rm -f app/src/main/res/layout/keyboard_view.xml
 
-          path = Path("app/build.gradle")
-          text = path.read_text()
+      - name: Verify v5 project files
+        shell: bash
+        run: |
+          set -euo pipefail
 
-          if "compileOptions" not in text:
-              text = text.replace(
-                  "    defaultConfig {\n"
-                  "        applicationId \"com.example.termuxkeyboard\"\n"
-                  "        minSdk 23\n"
-                  "        targetSdk 35\n"
-                  "        versionCode 1\n"
-                  "        versionName \"1.0\"\n"
-                  "    }\n",
-                  "    defaultConfig {\n"
-                  "        applicationId \"com.example.termuxkeyboard\"\n"
-                  "        minSdk 23\n"
-                  "        targetSdk 35\n"
-                  "        versionCode 1\n"
-                  "        versionName \"1.0\"\n"
-                  "    }\n\n"
-                  "    compileOptions {\n"
-                  "        sourceCompatibility JavaVersion.VERSION_17\n"
-                  "        targetCompatibility JavaVersion.VERSION_17\n"
-                  "    }\n\n"
-                  "    kotlinOptions {\n"
-                  "        jvmTarget = \"17\"\n"
-                  "    }\n"
-              )
+          test -f settings.gradle
+          test -f build.gradle
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/src/main/java/com/robot/mrkeyboard/TermuxKeyboardService.kt
+          test -f app/src/main/java/com/robot/mrkeyboard/SettingsActivity.kt
+          test -f app/src/main/java/com/robot/mrkeyboard/KeyboardPrefs.kt
+          test -f app/src/main/java/com/robot/mrkeyboard/KeyboardTheme.kt
+          test -f app/src/main/java/com/robot/mrkeyboard/MacroRepository.kt
+          test -f app/src/main/java/com/robot/mrkeyboard/PredictionEngine.kt
 
-          path.write_text(text)
-          PY
+          grep -q 'namespace "com.robot.mrkeyboard"' app/build.gradle
+          grep -q 'applicationId "com.robot.mrkeyboard"' app/build.gradle
 
       - name: Build APK with logs
         shell: bash
@@ -88,12 +75,12 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: termux-keyboard-debug-apk
+          name: mrrobot-keyboard-v5-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: termux-keyboard-build-logs
+          name: mrrobot-keyboard-v5-build-logs
           path: build-log.txt
