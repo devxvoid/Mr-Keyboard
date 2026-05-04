@@ -5,13 +5,24 @@
 
     <application
         android:allowBackup="true"
-        android:label="Termux Keyboard"
+        android:label="MrRobot Keyboard"
         android:theme="@style/AppTheme"
         android:supportsRtl="true">
 
+        <activity
+            android:name="com.robot.mrkeyboard.SettingsActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme"
+            android:label="MrRobot Keyboard">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <service
-            android:name=".TermuxKeyboardService"
-            android:label="Termux Keyboard"
+            android:name="com.robot.mrkeyboard.TermuxKeyboardService"
+            android:label="MrRobot Keyboard"
             android:permission="android.permission.BIND_INPUT_METHOD"
             android:exported="true">
 
