@@ -1,0 +1,348 @@
+name: Build Termux Keyboard APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Generate Project and Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create Android project files
+        run: |
+          mkdir -p termux-keyboard-app/app/src/main/java/com/example/termuxkeyboard
+          mkdir -p termux-keyboard-app/app/src/main/res/layout
+          mkdir -p termux-keyboard-app/app/src/main/res/xml
+          mkdir -p termux-keyboard-app/app/src/main/res/values
+
+          cat > termux-keyboard-app/settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "TermuxKeyboardApp"
+          include(":app")
+          EOF
+
+          cat > termux-keyboard-app/build.gradle <<'EOF'
+          plugins {
+              id "com.android.application" version "8.5.2" apply false
+              id "org.jetbrains.kotlin.android" version "1.9.24" apply false
+          }
+          EOF
+
+          cat > termux-keyboard-app/app/build.gradle <<'EOF'
+          plugins {
+              id "com.android.application"
+              id "org.jetbrains.kotlin.android"
+          }
+
+          android {
+              namespace "com.example.termuxkeyboard"
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId "com.example.termuxkeyboard"
+                  minSdk 23
+                  targetSdk 35
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          EOF
+
+          cat > termux-keyboard-app/app/src/main/AndroidManifest.xml <<'EOF'
+          <manifest xmlns:android="[schemas.android.com](http://schemas.android.com/apk/res/android)">
+
+              <uses-permission android:name="android.permission.VIBRATE" />
+
+              <application
+                  android:allowBackup="true"
+                  android:label="Termux Keyboard"
+                  android:theme="@style/AppTheme"
+                  android:supportsRtl="true">
+
+                  <service
+                      android:name=".TermuxKeyboardService"
+                      android:label="Termux Keyboard"
+                      android:permission="android.permission.BIND_INPUT_METHOD"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.view.InputMethod" />
+                      </intent-filter>
+
+                      <meta-data
+                          android:name="android.view.im"
+                          android:resource="@xml/method" />
+                  </service>
+
+              </application>
+
+          </manifest>
+          EOF
+
+          cat > termux-keyboard-app/app/src/main/res/xml/method.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <input-method xmlns:android="[schemas.android.com](http://schemas.android.com/apk/res/android)"
+              android:isDefault="false" />
+          EOF
+
+          cat > termux-keyboard-app/app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:windowNoTitle">true</item>
+                  <item name="android:windowActionBar">false</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > termux-keyboard-app/app/src/main/res/layout/keyboard_view.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="[schemas.android.com](http://schemas.android.com/apk/res/android)"
+              android:id="@+id/keyboardRoot"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:padding="4dp"
+              android:background="#202124">
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="46dp"
+                  android:orientation="horizontal">
+
+                  <Button android:id="@+id/keyEsc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Esc" />
+                  <Button android:id="@+id/keyTab" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Tab" />
+                  <Button android:id="@+id/keyCtrl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Ctrl" />
+                  <Button android:id="@+id/keyAlt" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Alt" />
+                  <Button android:id="@+id/keySlash" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="/" />
+                  <Button android:id="@+id/keyPipe" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="|" />
+                  <Button android:id="@+id/keyTilde" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="~" />
+                  <Button android:id="@+id/keyDollar" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="$" />
+
+              </LinearLayout>
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="46dp"
+                  android:orientation="horizontal">
+
+                  <Button android:id="@+id/keyLeft" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="←" />
+                  <Button android:id="@+id/keyDown" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="↓" />
+                  <Button android:id="@+id/keyUp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="↑" />
+                  <Button android:id="@+id/keyRight" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="→" />
+                  <Button android:id="@+id/keyEnter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="Enter" />
+
+              </LinearLayout>
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="46dp"
+                  android:orientation="horizontal">
+
+                  <Button android:id="@+id/keyCtrlC" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Ctrl+C" />
+                  <Button android:id="@+id/keyCtrlD" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Ctrl+D" />
+                  <Button android:id="@+id/keyCtrlL" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Ctrl+L" />
+
+              </LinearLayout>
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="46dp"
+                  android:orientation="horizontal">
+
+                  <Button android:id="@+id/keyLs" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="ls" />
+                  <Button android:id="@+id/keyCd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="cd" />
+                  <Button android:id="@+id/keyClear" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="clear" />
+                  <Button android:id="@+id/keyPkg" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="pkg update" />
+
+              </LinearLayout>
+
+          </LinearLayout>
+          EOF
+
+          cat > termux-keyboard-app/app/src/main/java/com/example/termuxkeyboard/TermuxKeyboardService.kt <<'EOF'
+          package com.example.termuxkeyboard
+
+          import android.inputmethodservice.InputMethodService
+          import android.view.KeyEvent
+          import android.view.View
+          import android.view.inputmethod.InputConnection
+          import android.widget.Button
+
+          class TermuxKeyboardService : InputMethodService() {
+
+              private var ctrlPressed = false
+              private var altPressed = false
+
+              override fun onCreateInputView(): View {
+                  val view = layoutInflater.inflate(R.layout.keyboard_view, null)
+
+                  view.findViewById<Button>(R.id.keyEsc).setOnClickListener {
+                      sendKey(KeyEvent.KEYCODE_ESCAPE)
+                  }
+
+                  view.findViewById<Button>(R.id.keyTab).setOnClickListener {
+                      sendKey(KeyEvent.KEYCODE_TAB)
+                  }
+
+                  view.findViewById<Button>(R.id.keyCtrl).setOnClickListener {
+                      ctrlPressed = !ctrlPressed
+                      it.isSelected = ctrlPressed
+                  }
+
+                  view.findViewById<Button>(R.id.keyAlt).setOnClickListener {
+                      altPressed = !altPressed
+                      it.isSelected = altPressed
+                  }
+
+                  view.findViewById<Button>(R.id.keySlash).setOnClickListener {
+                      commitText("/")
+                  }
+
+                  view.findViewById<Button>(R.id.keyPipe).setOnClickListener {
+                      commitText("|")
+                  }
+
+                  view.findViewById<Button>(R.id.keyTilde).setOnClickListener {
+                      commitText("~")
+                  }
+
+                  view.findViewById<Button>(R.id.keyDollar).setOnClickListener {
+                      commitText("$")
+                  }
+
+                  view.findViewById<Button>(R.id.keyLeft).setOnClickListener {
+                      sendKey(KeyEvent.KEYCODE_DPAD_LEFT)
+                  }
+
+                  view.findViewById<Button>(R.id.keyRight).setOnClickListener {
+                      sendKey(KeyEvent.KEYCODE_DPAD_RIGHT)
+                  }
+
+                  view.findViewById<Button>(R.id.keyUp).setOnClickListener {
+                      sendKey(KeyEvent.KEYCODE_DPAD_UP)
+                  }
+
+                  view.findViewById<Button>(R.id.keyDown).setOnClickListener {
+                      sendKey(KeyEvent.KEYCODE_DPAD_DOWN)
+                  }
+
+                  view.findViewById<Button>(R.id.keyEnter).setOnClickListener {
+                      sendKey(KeyEvent.KEYCODE_ENTER)
+                  }
+
+                  view.findViewById<Button>(R.id.keyCtrlC).setOnClickListener {
+                      sendCtrlKey(KeyEvent.KEYCODE_C)
+                  }
+
+                  view.findViewById<Button>(R.id.keyCtrlD).setOnClickListener {
+                      sendCtrlKey(KeyEvent.KEYCODE_D)
+                  }
+
+                  view.findViewById<Button>(R.id.keyCtrlL).setOnClickListener {
+                      sendCtrlKey(KeyEvent.KEYCODE_L)
+                  }
+
+                  view.findViewById<Button>(R.id.keyLs).setOnClickListener {
+                      commitText("ls ")
+                  }
+
+                  view.findViewById<Button>(R.id.keyCd).setOnClickListener {
+                      commitText("cd ")
+                  }
+
+                  view.findViewById<Button>(R.id.keyClear).setOnClickListener {
+                      commitText("clear")
+                      sendKey(KeyEvent.KEYCODE_ENTER)
+                  }
+
+                  view.findViewById<Button>(R.id.keyPkg).setOnClickListener {
+                      commitText("pkg update && pkg upgrade")
+                  }
+
+                  return view
+              }
+
+              private fun commitText(text: String) {
+                  currentInputConnection?.commitText(text, 1)
+              }
+
+              private fun sendKey(keyCode: Int) {
+                  val inputConnection: InputConnection = currentInputConnection ?: return
+
+                  var metaState = 0
+
+                  if (ctrlPressed) {
+                      metaState = metaState or KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+                  }
+
+                  if (altPressed) {
+                      metaState = metaState or KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON
+                  }
+
+                  inputConnection.sendKeyEvent(
+                      KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState)
+                  )
+
+                  inputConnection.sendKeyEvent(
+                      KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState)
+                  )
+
+                  ctrlPressed = false
+                  altPressed = false
+              }
+
+              private fun sendCtrlKey(keyCode: Int) {
+                  val inputConnection = currentInputConnection ?: return
+                  val metaState = KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
+
+                  inputConnection.sendKeyEvent(
+                      KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, metaState)
+                  )
+
+                  inputConnection.sendKeyEvent(
+                      KeyEvent(0, 0, KeyEvent.ACTION_UP, keyCode, 0, metaState)
+                  )
+              }
+          }
+          EOF
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        working-directory: termux-keyboard-app
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: termux-keyboard-debug-apk
+          path: termux-keyboard-app/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload generated source
+        uses: actions/upload-artifact@v4
+        with:
+          name: termux-keyboard-source
+          path: termux-keyboard-app
