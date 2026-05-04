@@ -1,0 +1,41 @@
+name: 03 Manifest + Theme
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: |
+          cat > app/src/main/AndroidManifest.xml <<EOF
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="MrRobot Keyboard">
+        <service
+            android:name="com.robot.mrkeyboard.TermuxKeyboardService"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.view.InputMethod"/>
+            </intent-filter>
+            <meta-data android:name="android.view.im"
+                android:resource="@xml/method"/>
+        </service>
+    </application>
+</manifest>
+EOF
+
+          echo '<input-method xmlns:android="http://schemas.android.com/apk/res/android"/>' > app/src/main/res/xml/method.xml
+
+          echo '<resources><style name="AppTheme" parent="android:style/Theme.Material.NoActionBar"/></resources>' > app/src/main/res/values/styles.xml
+
+      - run: |
+          git add .
+          git commit -m "Manifest added" || echo done
+          git push
