@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Generate complete Android project in repo root
         shell: bash
@@ -201,11 +203,7 @@ EOF
         android:paddingStart="8dp"
         android:paddingEnd="8dp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
-
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal">
         <Button style="@style/HackerKey" android:id="@+id/keyEsc" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="ESC" />
         <Button style="@style/HackerKey" android:id="@+id/keyTab" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="TAB" />
         <Button style="@style/HackerKey" android:id="@+id/keyCtrl" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL" />
@@ -216,11 +214,7 @@ EOF
         <Button style="@style/HackerKey" android:id="@+id/keyDollar" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="$" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
-
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal">
         <Button style="@style/HackerKey" android:id="@+id/keyLeft" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="LEFT" />
         <Button style="@style/HackerKey" android:id="@+id/keyDown" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="DOWN" />
         <Button style="@style/HackerKey" android:id="@+id/keyUp" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="UP" />
@@ -228,21 +222,13 @@ EOF
         <Button style="@style/HackerKey" android:id="@+id/keyEnter" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:text="ENTER" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
-
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal">
         <Button style="@style/HackerKey" android:id="@+id/keyCtrlC" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL+C" />
         <Button style="@style/HackerKey" android:id="@+id/keyCtrlD" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL+D" />
         <Button style="@style/HackerKey" android:id="@+id/keyCtrlL" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="CTRL+L" />
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal">
-
+    <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal">
         <Button style="@style/HackerKey" android:id="@+id/keyLs" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="ls" />
         <Button style="@style/HackerKey" android:id="@+id/keyCd" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="cd" />
         <Button style="@style/HackerKey" android:id="@+id/keyClear" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="clear" />
@@ -358,6 +344,24 @@ class TermuxKeyboardService : InputMethodService() {
 }
 EOF
 
+      - name: Validate generated files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f settings.gradle
+          test -f build.gradle
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
+          test -f app/src/main/res/xml/method.xml
+          test -f app/src/main/res/values/styles.xml
+          test -f app/src/main/res/drawable/key_hacker.xml
+          test -f app/src/main/res/drawable/keyboard_panel.xml
+          test -f app/src/main/res/layout/keyboard_view.xml
+          test -f app/src/main/java/com/example/termuxkeyboard/TermuxKeyboardService.kt
+
+          echo "Project files generated successfully."
+
       - name: Commit generated files
         shell: bash
         run: |
@@ -372,5 +376,5 @@ EOF
             echo "No project changes to commit."
           else
             git commit -m "Generate Termux Keyboard Android project"
-            git push
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
