@@ -1,4 +1,4 @@
-name: Unzip TermuxKeyboardApp Contents to Root
+name: Unzip MrRobotKeyboard v5 to Root
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   unzip:
-    name: Extract Inner Project Files to Root
+    name: Extract Project to Root
     runs-on: ubuntu-latest
 
     steps:
@@ -22,32 +22,38 @@ jobs:
         run: |
           set -euo pipefail
 
-          test -f TermuxKeyboardApp.zip
+          ZIP_NAME="MrRobotKeyboard-v5-production-full.zip"
+
+          test -f "$ZIP_NAME"
 
           rm -rf extracted
           mkdir -p extracted
 
-          unzip -o TermuxKeyboardApp.zip -d extracted
+          unzip -o "$ZIP_NAME" -d extracted
 
-      - name: Move files from TermuxKeyboardApp folder to repo root
+      - name: Move files to repo root
         shell: bash
         run: |
           set -euo pipefail
 
-          test -d extracted/TermuxKeyboardApp
+          # Find extracted root folder automatically
+          ROOT_DIR=$(find extracted -mindepth 1 -maxdepth 1 -type d | head -n 1)
+
+          echo "Detected root: $ROOT_DIR"
 
           shopt -s dotglob nullglob
 
-          # Remove workflow files from ZIP before moving.
-          # GitHub Actions cannot push workflow changes using default GITHUB_TOKEN.
-          rm -rf extracted/TermuxKeyboardApp/.github
+          # Remove workflows if exist (permission issue fix)
+          rm -rf "$ROOT_DIR/.github"
 
-          rsync -a extracted/TermuxKeyboardApp/ ./
+          # Copy files safely
+          rsync -a "$ROOT_DIR"/ ./
 
+          # Cleanup
           rm -rf extracted
-          rm -f TermuxKeyboardApp.zip
+          rm -f "$ZIP_NAME"
 
-      - name: Commit extracted root project
+      - name: Commit extracted project
         shell: bash
         run: |
           set -euo pipefail
@@ -60,6 +66,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Move TermuxKeyboardApp project files to repo root"
+            git commit -m "Import MrRobot Keyboard v5 project"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
