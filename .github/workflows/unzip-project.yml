@@ -38,7 +38,7 @@ jobs:
 
           shopt -s dotglob nullglob
 
-          mv extracted/TermuxKeyboardApp/* .
+          rsync -a extracted/TermuxKeyboardApp/ ./
 
           rm -rf extracted
           rm -f TermuxKeyboardApp.zip
